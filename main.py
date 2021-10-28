@@ -6,6 +6,7 @@ Description: Software for the FiPy to send an acknowledgement over the LoRaWAN a
 '''
 
 from network import LoRa, WLAN, LTE
+import uping
 import socket
 import time
 import json
@@ -99,6 +100,7 @@ class LoRaWAN():
         pycom.heartbeat(False)
 
         while not self.lora.has_joined():
+            print(ubinascii.hexlify(LoRa().mac()).upper())
             pycom.rgbled(0x000000)
             time.sleep(2.5)
             pycom.rgbled(0x7f0000)
@@ -166,18 +168,20 @@ class CATM1:
     """
     def getLTE(self):
         if not self.lte.isattached():
-            print('lte attaching ');
+            print('lte attaching ')
             self.lte.attach(band=20, apn="item.webtrial.m2m")
             while 1:
                 if self.lte.isattached(): print(' OK'); break
-                print('. ', end='');
+                print('. ', end='')
                 time.sleep(1)
 
-        print('configuring for sms', end=' ');
-        ans = self.lte.send_at_cmd('AT+CMGF=1').split('\r\n');
+        print('configuring for sms', end=' ')
+        ans = self.lte.send_at_cmd('AT+CMGF=1').split('\r\n')
         print(ans, end=' ')
-        ans = self.lte.send_at_cmd('AT+CPMS="SM", "SM", "SM"').split('\r\n');
-        print(ans);
+        ans = self.lte.send_at_cmd('AT+CPMS="SM", "SM", "SM"').split('\r\n')
+        print(ans)
+        ans = self.lte.send_at_cmd('AT+CSQ').split('\r\n')
+        print(ans, end=' ')
         print()
 
     """
@@ -216,28 +220,51 @@ class WiFi:
         self.pswd = 'NETWORK_PASSWORD'
         self.static_address = ('ASSIGN_STATIC_IP', 'SUBENTMASK', 'DEFAULT_GATEWAY', 'DNS')
         # example self.static_address = ('192.168.178.81', '255.255.255.0', '192.168.1.10', '8.8.8.8')
+        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_address = ("192.168.73.31", 8000)
 
     def getWLAN(self):
-
-        nets = self.wlan.scan()
-        for net in nets:
-            if net.ssid == self.ssid:
+        networks = self.wlan.scan()
+        for network in networks:
+            print(network)
+            if network.ssid == self.ssid:
                 print('Network found!')
                 self.wlan.ifconfig(config=self.static_address)
-                self.wlan.connect(net.ssid, auth=(net.sec, self.pswd), timeout=5000)
-                while not self.wlan.isconnected():
-                    machine.idle()  # save power while waiting
-                print('WLAN connection succeeded!')
-                print(self.wlan.ifconfig()[0])
+                try:
+                    self.wlan.connect(network.ssid, auth=(network.sec, self.pswd), timeout=10000)
+                    while not self.wlan.isconnected():
+                        machine.idle()  # save power while waiting
+                    print('WLAN connection succeeded!')
+                    return True
+                except Exception as e:
+                    print(e)
+                    print("Failed to connect!")
+                    return False
+        return False
+    
+    def has_reach(self):
+        try:
+            response = uping.ping("192.168.73.31")
+            print(response)
+            return True
+        except OSError:
+            print("Not able to reach")
+            return False
+        return False
 
+    def send(self):
+        self.client.connect(self.server_address)
+        message = "test".encode('utf-8')
+        self.client.send(message)
 
+        print(self.client.recv(2048).decode('utf-8'))
 
 """
     Class to setup a server on the FiPY.
 """
 class Server():
     def __init__(self):
-        self.s = socket.socket()  # Create a socket objec
+        self.s = socket.socket()  # Create a socket object
         self.serversocket = usocket.socket(usocket.AF_INET, usocket.SOCK_STREAM)
 
     """
@@ -294,7 +321,7 @@ def client_thread(clientsocket, n):
         """
         # print("CAT-M1 within range")
         # kpn.sendLTE(ack, msg)
-        fipy.send(ack, msg)
+        # fipy.send(ack, msg)
 
     # Sends back some data
     data = (str(n))
@@ -309,19 +336,21 @@ if __name__ == '__main__':
         #py = os.fsformat('/flash')
         
 
-        fipy = LoRaWAN()
+        # fipy = LoRaWAN()
         ship_wifi = WiFi()
         # kpn = CATM1()
 
-        fipy.initLoRa()
-        ship_wifi.getWLAN()
+        # fipy.initLoRa()
+        print(ship_wifi.getWLAN())
+        if ship_wifi.has_reach():
+            ship_wifi.send()
         # kpn.getLTE()
 
         pycom.heartbeat(False)
         
-        py = Pycoproc(Pycoproc.PYTRACK)
-        L76 = L76GNSS(pytrack=py)
-        L76.setAlwaysOn()
+        # py = Pycoproc(Pycoproc.PYTRACK)
+        # L76 = L76GNSS(pytrack=py)
+        # L76.setAlwaysOn()
         #acc = LIS2HH12(py)
 
         """
@@ -341,11 +370,11 @@ if __name__ == '__main__':
         # print(L76.coordinates(debug=False))
         # print(L76.getUTCDateTime(debug=False))
         
-        server = Server()
+        # server = Server()
 
-        server.setup_server()
+        # server.setup_server()
 
-        server.run()
+        # server.run()
 
     except RuntimeError:
         print("exit")
