@@ -15,6 +15,7 @@ import machine
 import ubinascii
 import usocket
 import pycom
+import json
 from LIS2HH12 import LIS2HH12
 from L76GNSV4 import L76GNSS
 from machine import ADC
@@ -80,7 +81,7 @@ def convert_payload(data):
 """
     Class to utilize LoRaWAN
 """
-class LoRaWAN():
+class LoRaWAN:
     def __init__(self):
         self.lora = LoRa(mode=LoRa.LORAWAN, region=LoRa.EU868)
         
@@ -221,7 +222,6 @@ class WiFi:
         self.static_address = ('ASSIGN_STATIC_IP', 'SUBENTMASK', 'DEFAULT_GATEWAY', 'DNS')
         # example self.static_address = ('192.168.178.81', '255.255.255.0', '192.168.1.10', '8.8.8.8')
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_address = ("192.168.73.31", 8000)
 
     def getWLAN(self):
         networks = self.wlan.scan()
@@ -244,25 +244,28 @@ class WiFi:
     
     def has_reach(self):
         try:
-            response = uping.ping("192.168.73.31")
-            print(response)
-            return True
+            response = uping.ping(socket.getaddrinfo("driel.rh.nl", 65533)[0][4][0])
+            return True if response == (4, 4) else False
         except OSError:
             print("Not able to reach")
             return False
         return False
 
-    def send(self):
-        self.client.connect(self.server_address)
-        message = "test".encode('utf-8')
-        self.client.send(message)
+    def send(self, dab_id, mstype):
+        self.client.connect(socket.getaddrinfo("driel.rh.nl", 65533)[0][4])
+        
+        confirmation = "ACK: " + str(dab_id) + ", Messagetype: " + str(mstype)
+        length_confirmation = str(len(confirmation)).encode() + (b' ' * (64 - len(confirmation)))
 
-        print(self.client.recv(2048).decode('utf-8'))
+        self.client.send(length_confirmation)
+        self.client.send("!DISCONNECT")
+
+        print(self.client.recv(2048).decode())
 
 """
     Class to setup a server on the FiPY.
 """
-class Server():
+class Server:
     def __init__(self):
         self.s = socket.socket()  # Create a socket object
         self.serversocket = usocket.socket(usocket.AF_INET, usocket.SOCK_STREAM)
@@ -272,9 +275,9 @@ class Server():
     """
     def setup_server(self):
         # Set up server socket
-        
         self.serversocket.setsockopt(usocket.SOL_SOCKET, usocket.SO_REUSEADDR, 1)
-        self.serversocket.bind(("STATIC_IP", "PORT"))
+        self.serversocket.bind(("192.168.178.11", 8000))
+        # self.serversocket.bind(("STATIC_IP", "PORT"))
 
         # Accept maximum of 5 connections at the same time
         self.serversocket.listen(5)
@@ -309,24 +312,35 @@ def client_thread(clientsocket, n):
         # Do something wth the received data...
         print("Received: {}".format(str(r)))
         data = json.loads(r.decode())
-        print(data.get("ack"))
-        print(data.get("msg"))
-        print(data.get("c"))
-
         ack = data.get("ack")
         msg = data.get("msg")
+        technology = data.get("tech")
         
+        print(ack)
+        print(msg)
+        print(technology)
+
         """
-            Send a acknowledgement over the 4G network and LoRaWAN
+            Send a acknowledgement over the 4G network, LoRaWAN or Wifi6
         """
-        # print("CAT-M1 within range")
-        # kpn.sendLTE(ack, msg)
-        # fipy.send(ack, msg)
+        if technology == "Wifi6" and ship_wifi.has_reach():
+            print("Wifi6 within range.")
+            print("Transmitting...")
+            ship_wifi.send(ack, msg)
+        elif technology == "LoRaWAN" and fipy.has_reach():
+            print("LoRaWAN within range.")
+            print("Transmitting...")
+            fipy.send(ack, msg)
+        elif technology == "LTE" and kpn.has_reach():
+            print("CAT-M1 within range")
+            print("Transmitting...")
+            kpn.sendLTE(ack, msg)
+
 
     # Sends back some data
     data = (str(n))
     print(data)
-    clientsocket.send(data)
+    clientsocket.send(data.encode())
 
     # Close the socket and terminate the thread
     clientsocket.close()
@@ -342,8 +356,6 @@ if __name__ == '__main__':
 
         # fipy.initLoRa()
         print(ship_wifi.getWLAN())
-        if ship_wifi.has_reach():
-            ship_wifi.send()
         # kpn.getLTE()
 
         pycom.heartbeat(False)
