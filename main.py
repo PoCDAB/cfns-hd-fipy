@@ -1,4 +1,4 @@
-''''
+'''
 project: Half-Duplex
 author: Alfred Espinosa Encarnación
 date: 06-05-2021
@@ -223,6 +223,9 @@ class WiFi:
         # example self.static_address = ('192.168.178.81', '255.255.255.0', '192.168.1.10', '8.8.8.8')
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+    """
+        This function tries to connect to a network within 10 seconds. If it succeeds it will return True otherwise it will return False.
+    """
     def getWLAN(self):
         networks = self.wlan.scan()
         for network in networks:
@@ -242,6 +245,9 @@ class WiFi:
                     return False
         return False
     
+    """
+        This function checks if the server with url driel.rh.nl is reachable or not.
+    """ 
     def has_reach(self):
         try:
             response = uping.ping(socket.getaddrinfo("driel.rh.nl", 65533)[0][4][0])
@@ -250,24 +256,39 @@ class WiFi:
             print("Not able to reach")
             return False
         return False
-
-    def send(self, dab_id, mstype):
+    
+    """
+        This function sends the confirmation to driel.rh.nl using Wifi. 
+    """
+    def send(self, dab_id, mstype, msg_length):
+        close_message = json.dumps({"DISCONNECT": True}) # This is the message used to close the connection
+        
         self.client.connect(socket.getaddrinfo("driel.rh.nl", 65533)[0][4])
         
-        confirmation = "ACK: " + str(dab_id) + ", Messagetype: " + str(mstype)
-        length_confirmation = str(len(confirmation)).encode() + (b' ' * (64 - len(confirmation)))
+        # Prepare the messages
+        confirmation = json.dumps({"ACK": dab_id, "MSTYPE": mstype})
+        length_confirmation = str(len(confirmation)).encode() + (b' ' * (msg_length - len(confirmation)))
+        length_close_message = str(len(close_message)).encode() + (b' ' * (msg_length - len(close_message)))
 
+        # Send the messages
         self.client.send(length_confirmation)
-        self.client.send("!DISCONNECT")
+        self.client.send(confirmation.encode())
 
-        print(self.client.recv(2048).decode())
+        # Receive the confirmation from the server
+        ack_length = self.client.recv(msg_length).decode()
+        ack = self.client.recv(int(ack_length)).decode()
+        data = json.loads(ack)
+
+        # # Disconnect
+        self.client.send(length_close_message)
+        self.client.send(close_message.encode())
+        return True if data.get("received") == True else False
 
 """
     Class to setup a server on the FiPY.
 """
 class Server:
     def __init__(self):
-        self.s = socket.socket()  # Create a socket object
         self.serversocket = usocket.socket(usocket.AF_INET, usocket.SOCK_STREAM)
 
     """
@@ -288,7 +309,7 @@ class Server:
     def run(self):
         # Unique data to send back
         c = 0
-        print("Running Server")
+        print("[SERVER] Running...")
         while True:
             # Accept the connection of the clients
             (clientsocket, address) = self.serversocket.accept()
@@ -301,46 +322,52 @@ class Server:
 """
 # Thread for handling a client
 def client_thread(clientsocket, n):
-    # Receive maxium of 1024 bytes from the client
-    r = clientsocket.recv(1024)
+    msg_length = 20 # The value is the amount of bytes the first message will be
+
+    # Receive the length of the message
+    confirmation_length = clientsocket.recv(msg_length).decode()
 
     # If recv() returns with 0 the other end closed the connection
-    if len(r) == 0:
+    if len(confirmation_length) == 0:
         clientsocket.close()
         return
     else:
+        # Receive the message with the confirmation information
+        confirmation = clientsocket.recv(int(confirmation_length)).decode()
+
         # Do something wth the received data...
-        print("Received: {}".format(str(r)))
-        data = json.loads(r.decode())
-        ack = data.get("ack")
-        msg = data.get("msg")
-        technology = data.get("tech")
-        
-        print(ack)
-        print(msg)
-        print(technology)
+        confirmation = json.loads(confirmation)
+        print("[THREAD {}] Received: {}".format(n, confirmation))
+        ack = confirmation.get("ack")
+        msg = confirmation.get("msg")
+        technology = confirmation.get("tech")
 
         """
             Send a acknowledgement over the 4G network, LoRaWAN or Wifi6
         """
         if technology == "Wifi6" and ship_wifi.has_reach():
-            print("Wifi6 within range.")
-            print("Transmitting...")
-            ship_wifi.send(ack, msg)
+            print("[THREAD {}] Wifi6 within range.".format(n))
+            print("[THREAD {}] Transmitting...".format(n))
+            succes = ship_wifi.send(ack, msg, msg_length)
         elif technology == "LoRaWAN" and fipy.has_reach():
-            print("LoRaWAN within range.")
-            print("Transmitting...")
-            fipy.send(ack, msg)
+            print("[THREAD {}] LoRaWAN within range.".format(n))
+            print("[THREAD {}] Transmitting...".format(n))
+            succes = fipy.send(ack, msg)
         elif technology == "LTE" and kpn.has_reach():
-            print("CAT-M1 within range")
-            print("Transmitting...")
-            kpn.sendLTE(ack, msg)
+            print("[THREAD {}] CAT-M1 within range".format(n))
+            print("[THREAD {}] Transmitting...".format(n))
+            succes = kpn.sendLTE(ack, msg)
+        else:
+            succes = False
 
 
-    # Sends back some data
-    data = (str(n))
-    print(data)
-    clientsocket.send(data.encode())
+    # Sends back True or False to notify the raspberry pi if the confirmation was a succes or not
+    reply = json.dumps({"reply": succes}).encode() 
+    clientsocket.send(str(len(reply)).encode() + (b' ' * (msg_length - len(reply))))
+    clientsocket.send(reply)
+    
+    # Notify the terminal user of the succes
+    print("[THREAD {}] Confirmation SUCCESSFUL!".format(n))
 
     # Close the socket and terminate the thread
     clientsocket.close()
@@ -382,11 +409,11 @@ if __name__ == '__main__':
         # print(L76.coordinates(debug=False))
         # print(L76.getUTCDateTime(debug=False))
         
-        # server = Server()
+        server = Server()
 
-        # server.setup_server()
+        server.setup_server()
 
-        # server.run()
+        server.run()
 
     except RuntimeError:
         print("exit")
