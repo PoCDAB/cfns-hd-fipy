@@ -1,8 +1,8 @@
 import usocket
 import json
 import _thread
-from main import acknowledge
-from main import pad_msg_length
+from Wifi import pad_msg_length
+
 """
     Class to setup a server on the FiPY.
 """
@@ -25,7 +25,7 @@ class Server:
     """
         Runs the server
     """
-    def run(self):
+    def run(self, device):
         # Unique data to send back
         thread_id = 0
         print("[SERVER] Running...")
@@ -33,7 +33,7 @@ class Server:
             # Accept the connection of the clients
             (clientsocket, address) = self.serversocket.accept()
             # Start a new thread to handle the client
-            _thread.start_new_thread(client_thread, (clientsocket, thread_id))
+            _thread.start_new_thread(client_thread, (clientsocket, thread_id, device))
             thread_id = thread_id + 1
 
 
@@ -41,7 +41,7 @@ class Server:
     Receives data from a client (Raspberry Pi). It sends back a number, just for debugging purpose.
 """
 # Thread for handling a client
-def client_thread(clientsocket, thread_id):
+def client_thread(clientsocket, thread_id, device):
     max_msg_length = 10 # The value is the amount of bytes the first message will be
 
     # Receive the length of the message
@@ -59,10 +59,12 @@ def client_thread(clientsocket, thread_id):
     print("[THREAD {}] Received: {}".format(thread_id, confirmation))
 
     # send the confirmation with the specified technology
-    succes = acknowledge(thread_id, confirmation, max_msg_length)
+    reply = acknowledge(thread_id, device, confirmation, max_msg_length)
+
+    if not reply:
+        reply  = json.dumps({"reply": succes}).encode() 
 
     # Sends back True or False to notify the raspberry pi if the confirmation was a succes or not
-    reply = json.dumps({"reply": succes}).encode() 
     clientsocket.send(pad_msg_length(max_msg_length, len(reply)))
     clientsocket.send(reply)
 
@@ -74,3 +76,32 @@ def client_thread(clientsocket, thread_id):
 
     # Close the socket and terminate the thread
     clientsocket.close()
+
+
+"""
+    Send a acknowledgement over the 4G network, LoRaWAN or Wifi6
+"""
+def acknowledge(thread_id, device, confirmation, max_msg_length):
+    if confirmation.get("technology") == "Wifi6" and device.has_reach():
+        print("[THREAD {}] Wifi6 within range.".format(thread_id))
+        print("[THREAD {}] Transmitting...".format(thread_id))
+        
+        # Send the confirmation using the ship wifi
+        device.init_socket()
+        device.connect()
+        reply = device.send(confirmation, max_msg_length)
+        device.disconect(max_msg_length)
+    elif confirmation.get("technology") == "LoRaWAN" and device.has_reach():
+        print("[THREAD {}] LoRaWAN within range.".format(thread_id))
+        print("[THREAD {}] Transmitting...".format(thread_id))
+
+        reply = device.send(confirmation)
+    elif confirmation.get("technology") == "LTE" and device.has_reach():
+        print("[THREAD {}] CAT-M1 within range".format(thread_id))
+        print("[THREAD {}] Transmitting...".format(thread_id))
+
+        reply = device.sendLTE(confirmation)
+    else:
+        return False
+
+    return reply

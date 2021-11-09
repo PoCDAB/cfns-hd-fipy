@@ -14,43 +14,6 @@ from LTE import CATM1
 from Wifi import WiFi
 from Server import Server
 
-"""
-    Send a acknowledgement over the 4G network, LoRaWAN or Wifi6
-"""
-def acknowledge(thread_id, confirmation, max_msg_length):
-    if confirmation.get("technology") == "Wifi6" and ship_wifi.has_reach():
-        print("[THREAD {}] Wifi6 within range.".format(thread_id))
-        print("[THREAD {}] Transmitting...".format(thread_id))
-        
-        # Send the confirmation using the ship wifi
-        ship_wifi.init_socket()
-        ship_wifi.connect()
-        succes = ship_wifi.send(confirmation, max_msg_length)
-        ship_wifi.disconect(max_msg_length)
-    elif confirmation.get("technology") == "LoRaWAN" and fipy.has_reach():
-        print("[THREAD {}] LoRaWAN within range.".format(thread_id))
-        print("[THREAD {}] Transmitting...".format(thread_id))
-
-        succes = fipy.send(confirmation)
-    elif confirmation.get("technology") == "LTE" and kpn.has_reach():
-        print("[THREAD {}] CAT-M1 within range".format(thread_id))
-        print("[THREAD {}] Transmitting...".format(thread_id))
-
-        succes = kpn.sendLTE(confirmation)
-    else:
-        succes = False
-
-    return succes
-
-"""
-    pad the var msg_length to the padding size. 
-    So that the message containing the msg_length has a fixed size of padding size.
-"""
-def pad_msg_length(padding_size, msg_length):
-    msg_length = str(msg_length).encode()
-    msg_length += b' ' * (padding_size - len(msg_length))
-    return msg_length
-
 if __name__ == '__main__':
     try:        
         #py = os.fsformat('/flash')
@@ -92,7 +55,7 @@ if __name__ == '__main__':
 
         server.setup_server()
 
-        server.run()
+        server.run(ship_wifi)
 
     except RuntimeError:
         print("exit")

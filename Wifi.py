@@ -3,7 +3,6 @@ import uping
 import socket
 import json
 import machine
-from main import pad_msg_length
 
 """
     Class to utilize WiFi to connect with the network on board of the ship
@@ -78,9 +77,22 @@ class WiFi:
         self.client.send(confirmation.encode())
 
         # Receive the confirmation from the server
-        ack_length = self.client.recv(max_msg_length).decode()
-        ack = self.client.recv(int(ack_length)).decode()
-        ack = json.loads(ack)
+        reply_length = self.client.recv(max_msg_length).decode()
+        
+        if len(confirmation_length) == 0:
+            return False
 
-        print(ack)
-        return True if data.get("received") == True else False
+        reply = self.client.recv(int(reply_length)).decode()
+        reply = json.loads(reply)
+
+        return reply
+
+
+"""
+    pad the var msg_length to the padding size. 
+    So that the message containing the msg_length has a fixed size of padding size.
+"""
+def pad_msg_length(padding_size, msg_length):
+    msg_length = str(msg_length).encode()
+    msg_length += b' ' * (padding_size - len(msg_length))
+    return msg_length
