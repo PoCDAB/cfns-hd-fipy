@@ -1,8 +1,18 @@
 from network import WLAN # type: ignore the line
+from datetime import datetime
 import uping # type: ignore the line
 import socket
 import json
 import machine # type: ignore the line
+
+# Changing print to a print with the time in front
+# is in Wifi.py because of import errors and Wifi does not import Server or main. So it will not give any import errors here
+old_print = print
+
+def new_print(*args, **kwargs):
+    old_print(datetime.now().strftime("%H:%M:%S |"), *args, **kwargs)
+
+print = new_print
 
 class NotAbleToConnectError(Exception):
     pass

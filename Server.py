@@ -1,7 +1,9 @@
 import usocket # type: ignore the line
 import json
 import _thread
-from Wifi import pad_msg_length, NotAbleToConnectError
+from Wifi import pad_msg_length, NotAbleToConnectError, new_print
+
+print = new_print
 
 """
     Class to setup a server on the FiPY.

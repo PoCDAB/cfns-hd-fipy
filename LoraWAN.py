@@ -6,6 +6,7 @@ import machine # type: ignore the line
 import ubinascii # type: ignore the line
 # from L76GNSV4 import L76GNSS
 
+
 """
     Class to utilize LoRaWAN
 """
