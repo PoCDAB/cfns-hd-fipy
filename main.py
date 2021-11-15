@@ -9,15 +9,15 @@ import pycom # type: ignore the line
 # from LIS2HH12 import LIS2HH12 # type: ignore the line
 # from pycoproc_1 import Pycoproc # type: ignore the line
 
-import Wifi
-import Server
+from LoraWAN import LoRaWAN
+from LTE import CATM1
+from Wifi import WiFi
+from Server import Server
 import test
 
-testing = False 
-print = Wifi.new_print
+testing = True 
 
 if __name__ == '__main__':
-    print("test")
     if testing:
         test.main()
     else:
@@ -25,7 +25,7 @@ if __name__ == '__main__':
             #py = os.fsformat('/flash')
 
             # fipy = LoRaWAN()
-            ship_wifi = Wifi.WiFi()
+            ship_wifi = WiFi()
             # kpn = CATM1()
 
             # fipy.initLoRa()
@@ -57,7 +57,7 @@ if __name__ == '__main__':
             # print(L76.coordinates(debug=False))
             # print(L76.getUTCDateTime(debug=False))
             
-            server = Server.Server()
+            server = Server()
 
             server.setup_server()
 
