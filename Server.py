@@ -1,7 +1,7 @@
-import usocket
+import usocket # type: ignore the line
 import json
 import _thread
-from Wifi import pad_msg_length
+from Wifi import pad_msg_length, NotAbleToConnectError
 
 """
     Class to setup a server on the FiPY.
@@ -62,14 +62,16 @@ def client_thread(clientsocket, thread_id, device):
     reply = acknowledge(thread_id, device, confirmation, max_msg_length)
 
     if not reply:
-        reply  = json.dumps({"reply": succes}).encode() 
+        reply  = {"reply": False}
 
     # Sends back True or False to notify the raspberry pi if the confirmation was a succes or not
+    reply = json.dumps(reply)
+    reply = reply.replace('"', "'")
     clientsocket.send(pad_msg_length(max_msg_length, len(reply)))
-    clientsocket.send(reply)
+    clientsocket.send(reply.encode())
 
     # Notify the terminal user of the succes
-    if succes:
+    if reply:
         print("[THREAD {}] Confirmation SUCCESSFUL!".format(thread_id))
     else:
         print("[THREAD {}] Confirmation FAILED!".format(thread_id))
@@ -82,15 +84,26 @@ def client_thread(clientsocket, thread_id, device):
     Send a acknowledgement over the 4G network, LoRaWAN or Wifi6
 """
 def acknowledge(thread_id, device, confirmation, max_msg_length):
-    if confirmation.get("technology") == "Wifi6" and device.has_reach():
+    if confirmation.get("technology") == "Wifi6" and device.has_reach(host=device.target_host, port=device.target_port, quiet=True):
         print("[THREAD {}] Wifi6 within range.".format(thread_id))
         print("[THREAD {}] Transmitting...".format(thread_id))
         
+        # Check if there is an internet connection established
+        if not device.wlan.isconnected(): # If not try to reconnect. If that fails return False
+            if not device.getWLAN():
+                return False
+
         # Send the confirmation using the ship wifi
         device.init_socket()
-        device.connect()
+
+        # Try to connect otherwise return False
+        try:
+            device.connect(device.target_host, device.target_port) 
+        except NotAbleToConnectError:
+            return False
+
         reply = device.send(confirmation, max_msg_length)
-        device.disconect(max_msg_length)
+        device.disconnect(max_msg_length)
     elif confirmation.get("technology") == "LoRaWAN" and device.has_reach():
         print("[THREAD {}] LoRaWAN within range.".format(thread_id))
         print("[THREAD {}] Transmitting...".format(thread_id))

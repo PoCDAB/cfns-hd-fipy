@@ -1,10 +1,10 @@
 from network import LoRa
 import socket
 import time
-import pycom
-import machine
-import ubinascii
-from L76GNSV4 import L76GNSS
+import pycom # type: ignore the line
+import machine # type: ignore the line
+import ubinascii # type: ignore the line
+# from L76GNSV4 import L76GNSS
 
 """
     Class to utilize LoRaWAN
