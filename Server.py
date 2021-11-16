@@ -3,15 +3,15 @@ import json
 import _thread
 from Wifi import pad_msg_length, NotAbleToConnectError
 
-"""
-    Class to setup a server on the FiPY.
-"""
+"""Class to setup a server on the FiPY."""
 class Server:
+    """Class to setup a server on the FiPY."""
+
     def __init__(self):
         self.serversocket = usocket.socket(usocket.AF_INET, usocket.SOCK_STREAM)
 
     """
-        Setup server with the use of an static IP assigned in the WiFi class
+        Setup server with the use of an static IP
     """
     def setup_server(self):
         # Set up server socket
@@ -23,7 +23,7 @@ class Server:
         self.serversocket.listen(5)
     
     """
-        Runs the server
+        Runs the server and creates a new thread for every connection
     """
     def run(self, device):
         # Unique data to send back
@@ -38,16 +38,17 @@ class Server:
 
 
 """
-    Receives data from a client (Raspberry Pi). It sends back a number, just for debugging purpose.
+    Receives data from a client (Raspberry Pi). It sends back the dict received from the server if the confirmation was a succes.
+    Otherwise send back a dict to notify the client the confirmation failed.
 """
-# Thread for handling a client
 def client_thread(clientsocket, thread_id, device):
     max_msg_length = 10 # The value is the amount of bytes the first message will be
 
     # Receive the length of the message
     confirmation_length = clientsocket.recv(max_msg_length).decode()
 
-    if len(confirmation_length) == 0: # If recv() returns with 0 the other end closed the connection
+    # If recv() returns with 0 the other end closed the connection
+    if len(confirmation_length) == 0: 
         clientsocket.close()
         return 
         
@@ -58,9 +59,10 @@ def client_thread(clientsocket, thread_id, device):
     confirmation = json.loads(confirmation)
     print("[THREAD {}] Received: {}".format(thread_id, confirmation))
 
-    # send the confirmation with the specified technology
+    # Send the confirmation with the specified technology
     reply = acknowledge(thread_id, device, confirmation, max_msg_length)
 
+    # If the reply failed send this alternative reply
     if not reply:
         reply  = {"reply": False}
 

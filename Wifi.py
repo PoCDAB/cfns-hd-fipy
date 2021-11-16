@@ -5,12 +5,12 @@ import json
 import machine # type: ignore the line
 
 class NotAbleToConnectError(Exception):
-    pass
+    """This Error is raised when a socket object is not able to connect to a target."""
 
-"""
-    Class to utilize WiFi to connect with the network on board of the ship
-"""
+
 class WiFi:
+    """Class to utilize WiFi to connect with the network on board of the ship."""
+
     def __init__(self):
         self.wlan = WLAN(mode=WLAN.STA)
         self.ssid = 'NETWORK_SSID'
@@ -43,7 +43,7 @@ class WiFi:
         return False
     
     """
-        This function checks if the server with can reach the host at a port
+        This method checks if the server can reach the host at a port with the option to do this without printing the ping result on the screen.
     """ 
     def has_reach(self, host, port, quiet=True):
         try:
@@ -53,15 +53,25 @@ class WiFi:
             print("Not able to reach {}".format(host))
             return False
 
+    """
+        This method is used to initialise a socket. But also to reset the socket so that it can connect again. 
+    """
     def init_socket(self):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+    """
+        This method tries to connect to the target with host=host and port=port. 
+        If that fails it raises an NotAbleToConnectError
+    """
     def connect(self, host, port):
         try:
             self.client.connect(socket.getaddrinfo(host, port)[0][4])
         except OSError:
             raise(NotAbleToConnectError)
     
+    """
+        This method sends a DISCONNECT message to the target to close the connection without causing any errors.
+    """
     def disconnect(self, max_msg_length):
         close_message = json.dumps({"DISCONNECT": True}) # This is the message used to close the connection
         length_close_message = pad_msg_length(max_msg_length, len(close_message))
@@ -74,7 +84,8 @@ class WiFi:
         self.client.close()
 
     """
-        This function sends the confirmation to driel.rh.nl using Wifi. 
+        This method sends the confirmation to the target specified in the init of WiFi.
+        And returns the reply of the host.
     """
     def send(self, confirmation, max_msg_length):
         # Prepare the messages

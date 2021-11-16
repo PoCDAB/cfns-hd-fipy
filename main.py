@@ -15,26 +15,30 @@ from Wifi import WiFi
 from Server import Server
 import test
 
-testing = True 
+testing = True
 
 if __name__ == '__main__':
+    # If testing is true start the testscript otherwise start the server
     if testing:
         test.main()
     else:
-        try:        
+        try:
             #py = os.fsformat('/flash')
 
-            # fipy = LoRaWAN()
+            # Creating the connection objects
             ship_wifi = WiFi()
+            # fipy = LoRaWAN()
             # kpn = CATM1()
 
-            # fipy.initLoRa()
+            # Initializing the connection objects
             while not ship_wifi.wlan.isconnected():
                 ship_wifi.getWLAN()
+            # fipy.initLoRa()
             # kpn.getLTE()
 
             pycom.heartbeat(False)
-            
+
+            # Initialise the GPS and accelerometer that are on the pytrack
             # py = Pycoproc(Pycoproc.PYTRACK)
             # L76 = L76GNSS(pytrack=py)
             # L76.setAlwaysOn()
@@ -56,11 +60,10 @@ if __name__ == '__main__':
             # # library until you get a the gps is fixed
             # print(L76.coordinates(debug=False))
             # print(L76.getUTCDateTime(debug=False))
-            
+
+            # Create, setup and run the server
             server = Server()
-
             server.setup_server()
-
             server.run(ship_wifi)
 
         except RuntimeError:

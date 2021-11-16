@@ -6,16 +6,18 @@ import machine # type: ignore the line
 import ubinascii # type: ignore the line
 # from L76GNSV4 import L76GNSS
 
-"""
-    Class to utilize LoRaWAN
-"""
+
 class LoRaWAN:
+    """Class to utilize LoRaWAN."""
     def __init__(self):
         self.lora = LoRa(mode=LoRa.LORAWAN, region=LoRa.EU868)
         
         # create a LoRa socket
         self.lora_socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
 
+    """
+        Establish a connection with the TTN (TheThinsNetwork) using LoRa
+    """
     def initLoRa(self):
         # create an OTAA authentication parameters, change them to the provided credentials
         app_eui = ubinascii.unhexlify('INSERT_APP_EUI')
@@ -46,6 +48,9 @@ class LoRaWAN:
         # (waits for the data to be sent and for the 2 receive windows to expire)
         self.lora_socket.setblocking(True)
 
+    """
+        Send a message to TTN using the LoRa connection. The message that will be send is based on the message type.
+    """
     def send(self, dab_id, mstype):
 
         data = []
@@ -85,9 +90,7 @@ class LoRaWAN:
 """
     A method that converts data to the format used by ttnmapper.org
 """
-def convert_payload(data):
-
-    
+def convert_payload(data):  
     payload = []
 
     if data[1] == 1: 
