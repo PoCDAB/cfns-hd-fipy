@@ -68,7 +68,7 @@ def client_thread(clientsocket, thread_id, device):
 
     # Sends back True or False to notify the raspberry pi if the confirmation was a succes or not
     reply = json.dumps(reply)
-    reply = reply.replace('"', "'")
+    reply = reply.replace('"', "'") # change to single otherwise the python interpreter on the rpi will add \ characters wich causes the length to mismatch and the program to crash
     clientsocket.send(pad_msg_length(max_msg_length, len(reply)))
     clientsocket.send(reply.encode())
 
