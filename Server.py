@@ -86,37 +86,38 @@ def client_thread(clientsocket, thread_id, device):
     Send a acknowledgement over the 4G network, LoRaWAN or Wifi6
 """
 def acknowledge(thread_id, device, confirmation, max_msg_length):
-    if confirmation.get("technology") == "Wifi6" and device.has_reach(host=device.target_host, port=device.target_port, quiet=True):
-        print("[THREAD {}] Wifi6 within range.".format(thread_id))
-        print("[THREAD {}] Transmitting...".format(thread_id))
-        
-        # Check if there is an internet connection established
-        if not device.wlan.isconnected(): # If not try to reconnect. If that fails return False
-            if not device.getWLAN():
+    for technology in confirmation.get("technology"):
+        if technology == "Wifi" and device.has_reach(host=device.target_host, port=device.target_port, quiet=True):
+            print("[THREAD {}] Wifi6 within range.".format(thread_id))
+            print("[THREAD {}] Transmitting...".format(thread_id))
+            
+            # Check if there is an internet connection established
+            if not device.wlan.isconnected(): # If not try to reconnect. If that fails return False
+                if not device.getWLAN():
+                    return False
+
+            # Send the confirmation using the ship wifi
+            device.init_socket()
+
+            # Try to connect otherwise return False
+            try:
+                device.connect(device.target_host, device.target_port) 
+            except NotAbleToConnectError:
                 return False
 
-        # Send the confirmation using the ship wifi
-        device.init_socket()
+            reply = device.send(confirmation, max_msg_length)
+            device.disconnect(max_msg_length)
+        elif technology == "LoRaWAN" and device.has_reach():
+            print("[THREAD {}] LoRaWAN within range.".format(thread_id))
+            print("[THREAD {}] Transmitting...".format(thread_id))
 
-        # Try to connect otherwise return False
-        try:
-            device.connect(device.target_host, device.target_port) 
-        except NotAbleToConnectError:
+            reply = device.send(confirmation)
+        elif technology == "LTE" and device.has_reach():
+            print("[THREAD {}] CAT-M1 within range".format(thread_id))
+            print("[THREAD {}] Transmitting...".format(thread_id))
+
+            reply = device.sendLTE(confirmation)
+        else:
             return False
-
-        reply = device.send(confirmation, max_msg_length)
-        device.disconnect(max_msg_length)
-    elif confirmation.get("technology") == "LoRaWAN" and device.has_reach():
-        print("[THREAD {}] LoRaWAN within range.".format(thread_id))
-        print("[THREAD {}] Transmitting...".format(thread_id))
-
-        reply = device.send(confirmation)
-    elif confirmation.get("technology") == "LTE" and device.has_reach():
-        print("[THREAD {}] CAT-M1 within range".format(thread_id))
-        print("[THREAD {}] Transmitting...".format(thread_id))
-
-        reply = device.sendLTE(confirmation)
-    else:
-        return False
 
     return reply
