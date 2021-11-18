@@ -15,7 +15,7 @@ from Wifi import WiFi
 from Server import Server
 import test
 
-testing = True
+testing = False
 
 if __name__ == '__main__':
     # If testing is true start the testscript otherwise start the server
@@ -29,6 +29,9 @@ if __name__ == '__main__':
             ship_wifi = WiFi()
             # fipy = LoRaWAN()
             # kpn = CATM1()
+            technologies = {
+                "Wifi": ship_wifi 
+            }
 
             # Initializing the connection objects
             while not ship_wifi.wlan.isconnected():
@@ -64,7 +67,7 @@ if __name__ == '__main__':
             # Create, setup and run the server
             server = Server()
             server.setup_server()
-            server.run(ship_wifi)
+            server.run(technologies)
 
         except RuntimeError:
             print("exit")

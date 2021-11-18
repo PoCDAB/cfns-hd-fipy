@@ -83,10 +83,5 @@ class WifiTester(unittest.TestCase):
 
 def main():
     unittest.main(module="test")
-    # test_wifi = Wifi.WiFi()
-    # while not test_wifi.wlan.isconnected():
-    #     test_wifi.getWLAN()
-
-    # uping.ping(host="google.com", quiet=False)
 
 

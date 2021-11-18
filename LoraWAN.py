@@ -49,6 +49,11 @@ class LoRaWAN:
         self.lora_socket.setblocking(True)
 
     """
+        Test if Lora can reach TTN. Not implemented yet
+    """
+    def has_reach(self):
+        return False
+    """
         Send a message to TTN using the LoRa connection. The message that will be send is based on the message type.
     """
     def send(self, dab_id, mstype):

@@ -25,7 +25,7 @@ class Server:
     """
         Runs the server and creates a new thread for every connection
     """
-    def run(self, device):
+    def run(self, technologies):
         # Unique data to send back
         thread_id = 0
         print("[SERVER] Running...")
@@ -33,15 +33,17 @@ class Server:
             # Accept the connection of the clients
             (clientsocket, address) = self.serversocket.accept()
             # Start a new thread to handle the client
-            _thread.start_new_thread(client_thread, (clientsocket, thread_id, device))
+            _thread.start_new_thread(client_thread, (clientsocket, thread_id, technologies))
             thread_id = thread_id + 1
 
+def get_technology_to_use(technologies, technology_to_use):
+    return technologies.get(technology_to_use)
 
 """
     Receives data from a client (Raspberry Pi). It sends back the dict received from the server if the confirmation was a succes.
     Otherwise send back a dict to notify the client the confirmation failed.
 """
-def client_thread(clientsocket, thread_id, device):
+def client_thread(clientsocket, thread_id, technologies):
     max_msg_length = 10 # The value is the amount of bytes the first message will be
 
     # Receive the length of the message
@@ -59,65 +61,49 @@ def client_thread(clientsocket, thread_id, device):
     confirmation = json.loads(confirmation)
     print("[THREAD {}] Received: {}".format(thread_id, confirmation))
 
-    # Send the confirmation with the specified technology
-    reply = acknowledge(thread_id, device, confirmation, max_msg_length)
+    if confirmation.get("has_reach"):
+        # Retrieve the tech to use by using the confirmation message with key has_reach
+        technology = get_technology_to_use(technologies, confirmation.get("has_reach"))
+        send_reply(clientsocket=clientsocket, reply={"reply": technology.has_reach()}, max_msg_length=max_msg_length)
+    else:
+        technology_to_use = get_technology_to_use(technologies, confirmation.get("technology"))
+        if technology_to_use:
+            # Send the confirmation with the specified technology
+            reply = acknowledge(thread_id, technology_to_use, confirmation)
+        else:
+            reply = False
 
-    # If the reply failed send this alternative reply
-    if not reply:
-        reply  = {"reply": False}
+        # Send the reply. If it was succesful send the retrieved dict. Otherwise send False back to the rpi
+        if reply:
+            print("[THREAD {}] Confirmation SUCCESSFUL!".format(thread_id))
+            send_reply(clientsocket, reply, max_msg_length)
+        else:
+            print("[THREAD {}] Confirmation FAILED!".format(thread_id))
+            send_reply(clientsocket=clientsocket, reply={"reply": False}, max_msg_length=max_msg_length)
 
-    # Sends back True or False to notify the raspberry pi if the confirmation was a succes or not
+    clientsocket.close()
+
+def send_reply(clientsocket, reply, max_msg_length):
+    # Sends back True or False to notify the raspberry pi if the confirmation or the has_reach was a succes or not
     reply = json.dumps(reply)
     reply = reply.replace('"', "'") # change to single otherwise the python interpreter on the rpi will add \ characters wich causes the length to mismatch and the program to crash
     clientsocket.send(pad_msg_length(max_msg_length, len(reply)))
     clientsocket.send(reply.encode())
 
-    # Notify the terminal user of the succes
-    if reply:
-        print("[THREAD {}] Confirmation SUCCESSFUL!".format(thread_id))
-    else:
-        print("[THREAD {}] Confirmation FAILED!".format(thread_id))
-
-    # Close the socket and terminate the thread
-    clientsocket.close()
-
-
 """
     Send a acknowledgement over the 4G network, LoRaWAN or Wifi6
 """
-def acknowledge(thread_id, device, confirmation, max_msg_length):
-    for technology in confirmation.get("technology"):
-        if technology == "Wifi" and device.has_reach(host=device.target_host, port=device.target_port, quiet=True):
-            print("[THREAD {}] Wifi6 within range.".format(thread_id))
-            print("[THREAD {}] Transmitting...".format(thread_id))
-            
-            # Check if there is an internet connection established
-            if not device.wlan.isconnected(): # If not try to reconnect. If that fails return False
-                if not device.getWLAN():
-                    return False
-
-            # Send the confirmation using the ship wifi
-            device.init_socket()
-
-            # Try to connect otherwise return False
-            try:
-                device.connect(device.target_host, device.target_port) 
-            except NotAbleToConnectError:
-                return False
-
-            reply = device.send(confirmation, max_msg_length)
-            device.disconnect(max_msg_length)
-        elif technology == "LoRaWAN" and device.has_reach():
-            print("[THREAD {}] LoRaWAN within range.".format(thread_id))
-            print("[THREAD {}] Transmitting...".format(thread_id))
-
-            reply = device.send(confirmation)
-        elif technology == "LTE" and device.has_reach():
-            print("[THREAD {}] CAT-M1 within range".format(thread_id))
-            print("[THREAD {}] Transmitting...".format(thread_id))
-
-            reply = device.sendLTE(confirmation)
-        else:
-            return False
+def acknowledge(thread_id, technology, confirmation):
+    if technology == "Wifi":
+        print("[THREAD {}] Transmitting with {}...".format(thread_id, technology))
+        reply = technology.acknowledge(confirmation)
+    elif technology == "LoRaWAN":
+        print("[THREAD {}] Transmitting with {}...".format(thread_id, technology))
+        reply = technology.send(confirmation)
+    elif technology == "LTE":
+        print("[THREAD {}] Transmitting with {}...".format(thread_id, technology))
+        reply = technology.sendLTE(confirmation)
+    else:
+        return False
 
     return reply

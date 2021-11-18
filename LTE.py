@@ -11,6 +11,12 @@ class CATM1:
         self.phonebook.append("PHONENUMBER")  # example +31612345678
 
     """
+        Test if this tech can reach a receiver. Not implemented yet.
+    """
+    def has_reach(self):
+        False
+
+    """
         Make connection to the mobile network
     """
     def getLTE(self):

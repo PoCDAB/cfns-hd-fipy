@@ -20,6 +20,7 @@ class WiFi:
         self.client = socket.socket()
         self.target_host = "driel.rh.nl"
         self.target_port = 65532
+        self.max_msg_length = 10
 
     """
         This function tries to connect to a network within 10 seconds. If it succeeds it will return True otherwise it will return False.
@@ -45,12 +46,13 @@ class WiFi:
     """
         This method checks if the server can reach the host at a port with the option to do this without printing the ping result on the screen.
     """ 
-    def has_reach(self, host, port, quiet=True):
+    def has_reach(self):
+
         try:
-            response = uping.ping(host=socket.getaddrinfo(host, port)[0][4][0], quiet=quiet)
+            response = uping.ping(host=socket.getaddrinfo(self.target_host, self.target_port)[0][4][0], quiet=True)
             return True if response[0] >= 1 and response[1] >= 1 else False
         except OSError:
-            print("Not able to reach {}".format(host))
+            print("Not able to reach {}".format(self.target_host))
             return False
 
     """
@@ -84,26 +86,49 @@ class WiFi:
         self.client.close()
 
     """
-        This method sends the confirmation to the target specified in the init of WiFi.
+        This method sends a message to the target specified in the init of WiFi.
         And returns the reply of the host.
     """
-    def send(self, confirmation, max_msg_length):
+    def send(self, dict):
         # Prepare the messages
-        confirmation = json.dumps(confirmation)
-        length_confirmation = pad_msg_length(max_msg_length, len(confirmation))
+        message = json.dumps(dict)
+        message_length = pad_msg_length(self.max_msg_length, len(message))
 
         # Send the messages
-        self.client.send(length_confirmation)
-        self.client.send(confirmation.encode())
+        self.client.send(message_length)
+        self.client.send(message.encode())
 
         # Receive the confirmation from the server
-        reply_length = self.client.recv(max_msg_length).decode()
+        reply_length = self.client.recv(self.max_msg_length).decode()
         
         if len(reply_length) == 0:
             return False
 
         reply = self.client.recv(int(reply_length)).decode()
         reply = json.loads(reply)
+
+        return reply
+
+    """
+        Is responsible for the complete confirmation proces when Wifi is being used.
+    """
+    def acknowledge(self, confirmation):
+        # Check if there is an internet connection established
+        if not self.wlan.isconnected(): # If not try to reconnect. If that fails return False
+            if not self.getWLAN():
+                return False
+
+        # Create a new socket
+        self.init_socket()
+
+        # Try to connect otherwise return False
+        try:
+            self.connect(self.target_host, self.target_port) 
+        except NotAbleToConnectError:
+            return False
+
+        reply = self.send(confirmation, self.max_msg_length)
+        self.disconnect(self.max_msg_length)
 
         return reply
 
