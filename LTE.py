@@ -14,7 +14,13 @@ class CATM1:
         Test if this tech can reach a receiver. Not implemented yet.
     """
     def has_reach(self):
-        False
+        ans = self.lte.send_at_cmd('AT+CSQ').split('\r\n')[1]
+        if not "ERROR" in ans:
+            start = ans.find(":") + len(":")
+            end = ans.find(",")
+            return True if not int(ans[start:end].strip()) == 99 else False
+        else: 
+            return False
 
     """
         Make connection to the mobile network
@@ -24,7 +30,9 @@ class CATM1:
             print('lte attaching ')
             self.lte.attach(band=20, apn="item.webtrial.m2m")
             while 1:
-                if self.lte.isattached(): print(' OK'); break
+                if self.lte.isattached(): 
+                    print(' OK')
+                    break
                 print('. ', end='')
                 time.sleep(1)
 
@@ -33,15 +41,12 @@ class CATM1:
         print(ans, end=' ')
         ans = self.lte.send_at_cmd('AT+CPMS="SM", "SM", "SM"').split('\r\n')
         print(ans)
-        ans = self.lte.send_at_cmd('AT+CSQ').split('\r\n')
-        print(ans, end=' ')
-        print()
+        
 
     """
         Send an SMS over the mobile network
     """
     def sendLTE(self, dab_id, mstype):
-        
         if mstype == 1:
             msg = "ack:" + str(dab_id) + ", mstype:" + str(mstype) + ""
         if mstype == 2 or mstype == 3:
@@ -56,6 +61,7 @@ class CATM1:
             msg = "ack:" + str(dab_id) + ", mstype:" + str(mstype) + ", data:" + str(data) + ""
         if mstype == 4:
             msg = "ack:" + str(dab_id) + ", mstype:" + str(mstype) + ""
+
         for number in self.phonebook:
             print('sending an sms', end=' ');
             ans = self.lte.send_at_cmd('AT+SQNSMSSEND="' + number + '", "' + msg + '"').split('\r\n');

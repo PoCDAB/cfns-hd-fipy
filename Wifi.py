@@ -127,7 +127,7 @@ class WiFi:
         except NotAbleToConnectError:
             return False
 
-        reply = self.send(confirmation, self.max_msg_length)
+        reply = self.send(confirmation)
         self.disconnect(self.max_msg_length)
 
         return reply

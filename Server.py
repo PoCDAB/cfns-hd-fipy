@@ -19,8 +19,8 @@ class Server:
         self.serversocket.bind(("192.168.178.11", 8000))
         # self.serversocket.bind(("STATIC_IP", "PORT"))
 
-        # Accept maximum of 5 connections at the same time
-        self.serversocket.listen(5)
+        # Enables the serversocket to accept connections
+        self.serversocket.listen()
     
     """
         Runs the server and creates a new thread for every connection
@@ -94,13 +94,13 @@ def send_reply(clientsocket, reply, max_msg_length):
     Send a acknowledgement over the 4G network, LoRaWAN or Wifi6
 """
 def acknowledge(thread_id, technology, confirmation):
-    if technology == "Wifi":
+    if confirmation.get("technology") == "Wifi":
         print("[THREAD {}] Transmitting with {}...".format(thread_id, technology))
         reply = technology.acknowledge(confirmation)
-    elif technology == "LoRaWAN":
+    elif confirmation.get("technology") == "LoRaWAN":
         print("[THREAD {}] Transmitting with {}...".format(thread_id, technology))
         reply = technology.send(confirmation)
-    elif technology == "LTE":
+    elif confirmation.get("technology") == "LTE":
         print("[THREAD {}] Transmitting with {}...".format(thread_id, technology))
         reply = technology.sendLTE(confirmation)
     else:

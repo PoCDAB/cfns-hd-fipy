@@ -49,48 +49,42 @@ class LoRaWAN:
         self.lora_socket.setblocking(True)
 
     """
-        Test if Lora can reach TTN. Not implemented yet
+        Test if Lora still has a connection with TTN.
     """
     def has_reach(self):
-        return False
+        return True if self.lora.has_joined() else False
+
     """
         Send a message to TTN using the LoRa connection. The message that will be send is based on the message type.
     """
     def send(self, dab_id, mstype):
 
         data = []
-        if mstype == 1:
-            data.append(dab_id)
-            data.append(mstype)
-            payload = convert_payload(data)
-            self.lora_socket.send(bytes(payload))
+        data.append(dab_id)
+        data.append(mstype)
 
         if mstype == 2 or mstype == 3:
+            print("Message type two")
             #location = L76.get_location(debug=False)
             #payload = convert_payload(dab_id, mstype, location["latitude"], location["longitude"], location["altitude"], location["HDOP"])
-            data.append(dab_id)
-            data.append(mstype)
             data.append(52.6529)
             data.append(4.746133)
             data.append(1)
             data.append(1)
-            payload = convert_payload(data)
-
-            print("Message type two")
-            self.lora_socket.send(bytes(payload))
-
-        if mstype == 4:
+        elif mstype == 4:
+            print("Message type four")
             #location = L76.get_location(debug=False)
             #payload = convert_payload(dab_id, mstype, location["latitude"], location["longitude"], location["altitude"], location["HDOP"])
-            data.append(dab_id)
-            data.append(mstype)
             data.append(30)
             data.append(1)
-            payload = convert_payload(data)
-
-            print("Message type four")
-            self.lora_socket.send(bytes(payload))
-
+        
+        payload = convert_payload(data)
+        try: 
+            self.lora_socket.send(payload)
+            return True
+        except OSError as e:
+            print(e)
+            return False
 
 """
     A method that converts data to the format used by ttnmapper.org
@@ -103,7 +97,6 @@ def convert_payload(data):
         mstype = data[1]
         payload.append(int(dab_id))
         payload.append(int(mstype))
-        return payload
 
     elif data[1] == 2 or data[1] == 3: 
 
@@ -132,7 +125,6 @@ def convert_payload(data):
         payload.append(((altb  >> 8) & 0xFF))
         payload.append((altb & 0xFF))
         payload.append(hdopb & 0xFF)    
-        return payload
 
     elif data[1] == 4: 
         dab_id = data[0]
@@ -144,4 +136,5 @@ def convert_payload(data):
         payload.append(int(mstype))
         payload.append(int(rssi))
         payload.append(int(srn))
-        return payload
+        
+    return bytes(payload)
