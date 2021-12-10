@@ -95,13 +95,13 @@ def send_reply(clientsocket, reply, max_msg_length):
 """
 def acknowledge(thread_id, technology, confirmation):
     if confirmation.get("technology") == "Wifi":
-        print("[THREAD {}] Transmitting with {}...".format(thread_id, technology))
+        print("[THREAD {}] Transmitting with {}...".format(thread_id, technology.__class__.__qualname__))
         reply = technology.acknowledge(confirmation)
     elif confirmation.get("technology") == "LoRaWAN":
-        print("[THREAD {}] Transmitting with {}...".format(thread_id, technology))
+        print("[THREAD {}] Transmitting with {}...".format(thread_id, technology.__class__.__qualname__))
         reply = technology.send(confirmation)
     elif confirmation.get("technology") == "LTE":
-        print("[THREAD {}] Transmitting with {}...".format(thread_id, technology))
+        print("[THREAD {}] Transmitting with {}...".format(thread_id, technology.__class__.__qualname__))
         reply = technology.sendLTE(confirmation)
     else:
         return False
