@@ -18,7 +18,7 @@ class WiFi:
         self.static_address = ('ASSIGN_STATIC_IP', 'SUBENTMASK', 'DEFAULT_GATEWAY', 'DNS')
         # example self.static_address = ('192.168.178.81', '255.255.255.0', '192.168.1.10', '8.8.8.8')
         self.client = socket.socket()
-        self.target_host = "driel.rh.nl"
+        self.target_host = "test1.cfns.nl"
         self.target_port = 65532
         self.max_msg_length = 10
 
