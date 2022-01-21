@@ -47,7 +47,6 @@ class WiFi:
         This method checks if the server can reach the host at a port with the option to do this without printing the ping result on the screen.
     """ 
     def has_reach(self):
-
         try:
             response = uping.ping(host=socket.getaddrinfo(self.target_host, self.target_port)[0][4][0], quiet=True)
             return True if response[0] >= 1 and response[1] >= 1 else False

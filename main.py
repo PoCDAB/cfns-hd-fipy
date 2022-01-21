@@ -27,18 +27,21 @@ if __name__ == '__main__':
 
             # Creating the connection objects
             ship_wifi = WiFi()
-            fipy = LoRaWAN()
+            lora = LoRaWAN()
             kpn = CATM1()
             technologies = {
                 "Wifi": ship_wifi,
                 "LTE": kpn,
-                "LoRa": fipy
+                "LoRa": lora
             }
 
             # Initializing the connection objects
             while not ship_wifi.wlan.isconnected():
                 ship_wifi.getWLAN()
-            # fipy.initLoRa()
+
+            # commented, because at home I never have a connection. To stop the programming from getting stuck at this line it is commented.
+            # lora.initLoRa() 
+
             kpn.getLTE()
 
             pycom.heartbeat(False)
