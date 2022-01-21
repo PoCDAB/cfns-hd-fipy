@@ -30,14 +30,14 @@ code .
 If you want to setup multiple technologies you need to follow the setup until it tells you to upload the code. Then you need to swith to the other technology you want to setup. If you have setup all the technologies you can upload the code once.
 
 ### Setup WiFi 
-1. Make sure you know how to upload code to the Pycom FiPy. If you don't know you can follow [Setup VSCode + Pymakr](### Setup-VSCode-+-Pymakr).
+1. Make sure you know how to upload code to the Pycom FiPy. If you don't know you can follow [Setup VSCode + Pymakr](###Setup-VSCode-+-Pymakr).
 2. Make sure you can connect to the WiFi network that the Raspberry Pi uses.
 3. Open [Wifi.py](Wifi.py).
 4. In the WiFi class change the _ssid_ and _pswd_ to the ssid and pswd of the same network the Raspberry Pi uses.
 5. Choose a _static_address_ for the FiPy to use within the network. Make sure the _static_address_ is a valid not used ip_address in the network.
 6. Save [Wifi.py](Wifi.py).
 7. Upload the code to the FiPy. For Windows using VSCode + Pymakr press F1 and then Pymakr> Upload Project.
-8. You have successfully setup WiFi for the Pycom FiPy. If the device won't upload see [Won't upload](### Won't-upload).
+8. You have successfully setup WiFi for the Pycom FiPy. If the device won't upload see [Won't upload](###Won't-upload).
 
 ### Setup LoRaWAN
 1. To setup LoRaWAN and the FiPy for the first time see [this link](https://pycom.io/wp-content/uploads/2020/04/Lesson-4-Getting-Connected-with-LoRa.pdf).
@@ -46,14 +46,14 @@ If you want to setup multiple technologies you need to follow the setup until it
 4. Replace the placeholders in the method initLoRa with the data of the TTN app you made in step 1.
 5. Save [LoraWAN.py](LoraWAN.py).
 7. Upload the code to the FiPy. For Windows using VSCode + Pymakr press F1 and then Pymakr> Upload Project.
-8. You have successfully setup LoRaWAN for the Pycom FiPy. If the device won't upload see [Won't upload](### Won't-upload).
+8. You have successfully setup LoRaWAN for the Pycom FiPy. If the device won't upload see [Won't upload](###Won't-upload).
 
 ### Setup LTE (CAT-M1)
 1. Open [LTE.py](LTE.py).
 2. Fill in the phonenumber of the phone you want to send the SMS to.
 3. Save [LTE.py](LTE.py).
 4. Upload the code to the FiPy. For Windows using VSCode + Pymakr press F1 and then Pymakr> Upload Project.
-5. You have successfully setup LTE for the Pycom FiPy. If the device won't upload see [Won't upload](### Won't-upload).
+5. You have successfully setup LTE for the Pycom FiPy. If the device won't upload see [Won't upload](###Won't-upload).
 
 ## Common problems
 
