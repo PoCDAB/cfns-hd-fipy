@@ -1,3 +1,14 @@
+
+'''
+project: half-duplex, slimmer maken multiconnectivity modem
+author: Alfred Espinosa Encarnación, Frank Montenij
+Description: This class is able to connect to TheThingsNetwork and send messages to using LoRaWAN.
+
+Changelog: Alfred created the file.
+           Frank added everything except for the __init__ method and the getWLAN method.
+           But the __init__ method he did change. For example, Frank added the fields target_host, target_port and max_msg_length.
+'''
+
 from network import WLAN # type: ignore the line
 import uping # type: ignore the line
 import socket

@@ -1,8 +1,11 @@
 '''
-project: Half-Duplex
-author: Alfred Espinosa Encarnación
+project: Half-Duplex, slimmer maken multiconnectivity modem
+author: Alfred Espinosa Encarnación, Frank Montenij
 date: 06-05-2021
-Description: Software for the FiPy to send an acknowledgement over the LoRaWAN and 4G (CAT-M1) network of KPN.
+Description: Software for the FiPy to send an acknowledgement over the LoRaWAN, 4G (CAT-M1) network of KPN and WiFi.
+
+Changelog: Alfred made the first version. 
+           Frank changed the code by storing the technologies and passing that dict along when running the server.
 '''
 
 import pycom # type: ignore the line

@@ -1,3 +1,11 @@
+'''
+project: half-duplex, slimmer maken multiconnectivity modem
+author: Alfred Espinosa Encarnación, Frank Montenij
+Description: This testcase tests if the fipy can acknowledge a message using WiFi.
+
+Changelog: Frank created this file.
+'''
+
 import unittest
 import Wifi
 import uping # type: ignore the line

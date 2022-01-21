@@ -1,3 +1,12 @@
+'''
+project: half-duplex, slimmer maken multiconnectivity modem
+author: Alfred Espinosa Encarnación, Frank Montenij
+Description: The Server is responsible for receiving data that it needs to acknowledge. To pass the data along to the correct technology and send back the result.
+
+Changelog: Alfred created the file.
+           Frank added acknowledge as well as some other helper functions for receiving and sending messages.
+'''
+
 import usocket # type: ignore the line
 import json
 import _thread

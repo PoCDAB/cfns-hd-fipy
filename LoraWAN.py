@@ -1,3 +1,12 @@
+
+'''
+project: half-duplex, slimmer maken multiconnectivity modem
+author: Alfred Espinosa Encarnación, Frank Montenij
+Description: This class is able to connect to TheThingsNetwork and send messages to using LoRaWAN.
+
+Changelog: Alfred created the file and Frank added has_reach. 
+'''
+
 from network import LoRa
 import socket
 import time

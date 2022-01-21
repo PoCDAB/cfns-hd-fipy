@@ -1,3 +1,12 @@
+
+'''
+project: half-duplex, slimmer maken multiconnectivity modem
+author: Alfred Espinosa Encarnación, Frank Montenij
+Description: This class is able to send messages using LTE to differnt phones.
+
+Changelog: Alfred created the file and Frank added has_reach. 
+'''
+
 from network import LTE
 import time
 
